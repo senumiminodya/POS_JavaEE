@@ -9,9 +9,9 @@ import java.util.List;
 public interface ItemDAO {
     boolean saveItem(ItemDTO item, Connection connection) throws SQLException;
 
-    boolean updateItem(String id, ItemDTO item, Connection connection) throws SQLException;
+    boolean updateItem(String code, ItemDTO item, Connection connection) throws SQLException;
 
-    boolean deleteItem(String id, Connection connection) throws SQLException;
+    boolean deleteItem(String code, Connection connection) throws SQLException;
 
     List<ItemDTO> getAllItems(Connection connection) throws SQLException;
 }

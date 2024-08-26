@@ -3,60 +3,95 @@ package lk.ijse.eebackend.dao.impl;
 import lk.ijse.eebackend.dao.ItemDAO;
 import lk.ijse.eebackend.dto.ItemDTO;
 
-import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ItemDAOImpl implements ItemDAO {
+
+    private static final Logger LOGGER = Logger.getLogger(ItemDAOImpl.class.getName());
     @Override
     public boolean saveItem(ItemDTO item, Connection connection) throws SQLException {
-        String query = "INSERT INTO item (name, price, qty) VALUES (?, ?, ?)";
-        try (PreparedStatement pst = connection.prepareStatement(query)) {
-            pst.setString(1, item.getName());
-            pst.setBigDecimal(2, new BigDecimal(item.getPrice()));
-            pst.setInt(3, Integer.parseInt(item.getQty()));
-            return pst.executeUpdate() > 0;
+        String sql = "INSERT INTO item (code, name, price, qty) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement pst = connection.prepareStatement(sql)) {
+            pst.setString(1, item.getCode());
+            pst.setString(2, item.getName());
+            pst.setString(3, item.getPrice());
+            pst.setString(4, item.getQty());
+            boolean result = pst.executeUpdate() > 0;
+            if (result) {
+                LOGGER.info("Item saved successfully: " + item);
+            } else {
+                LOGGER.warning("Failed to save item: " + item);
+            }
+            return result;
+        }catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error saving item: " + item, e);
+            throw e;
         }
     }
 
     @Override
-    public boolean updateItem(String id, ItemDTO item, Connection connection) throws SQLException {
-        String query = "UPDATE item SET name = ?, price = ?, qty = ? WHERE id = ?";
-        try (PreparedStatement pst = connection.prepareStatement(query)) {
-            pst.setString(1, item.getName());
-            pst.setBigDecimal(2, new BigDecimal(item.getPrice()));
-            pst.setInt(3, Integer.parseInt(item.getQty()));
-            pst.setInt(4, Integer.parseInt(id));
-            return pst.executeUpdate() > 0;
+    public boolean updateItem(String code, ItemDTO itemDTO, Connection connection) throws SQLException {
+        String sql = "UPDATE item SET name = ?, price = ?, qty = ? WHERE code = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, itemDTO.getName());
+            ps.setString(2, itemDTO.getPrice());
+            ps.setString(3, itemDTO.getQty());
+            ps.setString(4, code);
+            boolean result = ps.executeUpdate() > 0;
+            if (result) {
+                LOGGER.info("Item updated successfully: " + itemDTO);
+            } else {
+                LOGGER.warning("Failed to update item with code: " + code);
+            }
+            return result;
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error updating item with code: " + code, e);
+            throw e;
         }
     }
 
     @Override
-    public boolean deleteItem(String id, Connection connection) throws SQLException {
-        String query = "DELETE FROM item WHERE id = ?";
-        try (PreparedStatement pst = connection.prepareStatement(query)) {
-            pst.setInt(1, Integer.parseInt(id));
-            return pst.executeUpdate() > 0;
+    public boolean deleteItem(String code, Connection connection) throws SQLException {
+        String sql = "DELETE FROM item WHERE code = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, code);
+            boolean result = ps.executeUpdate() > 0;
+            if (result) {
+                LOGGER.info("Item deleted successfully with code: " + code);
+            } else {
+                LOGGER.warning("Failed to delete item with code: " + code);
+            }
+            return result;
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error deleting item with code: " + code, e);
+            throw e;
         }
     }
 
     @Override
     public List<ItemDTO> getAllItems(Connection connection) throws SQLException {
-        String query = "SELECT * FROM item";
+        List<ItemDTO> items = new ArrayList<>();
+        String sql = "SELECT * FROM item";
         try (Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
-            List<ItemDTO> itemList = new ArrayList<>();
+             ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
-                itemList.add(new ItemDTO(
-                        rs.getString("id"),
-                        rs.getString("name"),
-                        rs.getString("price"),
-                        rs.getString("qty")
-                ));
+                ItemDTO itemDTO = new ItemDTO();
+                itemDTO.setCode(rs.getString("code"));
+                itemDTO.setName(rs.getString("name"));
+                itemDTO.setPrice(rs.getString("price"));
+                itemDTO.setQty(rs.getString("qty"));
+                items.add(itemDTO);
             }
-            return itemList;
+            LOGGER.info("Retrieved all items. Total count: " + items.size());
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error retrieving all items", e);
+            throw e;
         }
+        return items;
     }
 
 }

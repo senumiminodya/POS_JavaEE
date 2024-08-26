@@ -13,18 +13,26 @@ public class ItemBOImpl implements ItemBO {
     private final ItemDAO itemDAO = new ItemDAOImpl();
 
     @Override
-    public boolean saveItem(ItemDTO item, Connection connection) throws SQLException {
-        return itemDAO.saveItem(item, connection);
+    public boolean saveItem(ItemDTO itemDTO, Connection connection) throws SQLException {
+        try {
+            return itemDAO.saveItem(itemDTO, connection);
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to save item", e);
+        }
     }
 
     @Override
-    public boolean updateItem(String id, ItemDTO item, Connection connection) throws SQLException {
-        return itemDAO.updateItem(id, item, connection);
+    public boolean updateItem(String code, ItemDTO itemDTO, Connection connection) throws SQLException {
+        try {
+            return itemDAO.updateItem(code, itemDTO, connection);
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to update item", e);
+        }
     }
 
     @Override
-    public boolean deleteItem(String id, Connection connection) throws SQLException {
-        return itemDAO.deleteItem(id, connection);
+    public boolean deleteItem(String code, Connection connection) throws SQLException {
+        return itemDAO.deleteItem(code, connection);
     }
 
     @Override
