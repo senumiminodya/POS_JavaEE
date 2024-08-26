@@ -10,10 +10,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lk.ijse.eebackend.dto.CustomerDTO;
 import lk.ijse.eebackend.bo.impl.CustomerBOImpl;
+import org.json.JSONObject;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -21,7 +23,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-@WebServlet(urlPatterns = "/customer", loadOnStartup = 2)
+@WebServlet(urlPatterns = "/customer/*", loadOnStartup = 2)
 public class CustomerController extends HttpServlet {
     private static final Logger LOGGER = Logger.getLogger(CustomerController.class.getName());
     private Connection connection;
@@ -91,7 +93,9 @@ public class CustomerController extends HttpServlet {
                 return;
             }
 
-            if (customerBOImpl.updateCustomer(customerID, updatedCustomer, connection)) {
+            boolean isUpdated = customerBOImpl.updateCustomer(customerID, updatedCustomer, connection);
+
+            if (isUpdated) {
                 writer.write("Customer updated successfully");
                 resp.setStatus(HttpServletResponse.SC_OK);
                 LOGGER.info("Customer updated successfully: " + updatedCustomer);
@@ -103,20 +107,24 @@ public class CustomerController extends HttpServlet {
         } catch (JsonException e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             LOGGER.log(Level.SEVERE, "JSON processing error", e);
+        }catch (Exception e) {
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "An unexpected error occurred");
+            LOGGER.log(Level.SEVERE, "Unexpected error", e);
         }
     }
 
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String customerId = req.getParameter("id");
+        String customerId = req.getPathInfo().substring(1);
+
         if (customerId == null || customerId.isEmpty()) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Customer ID is required.");
             LOGGER.warning("Missing customer ID in delete request");
             return;
         }
 
-        try (var writer = resp.getWriter()) {
+        try (BufferedReader reader = req.getReader()) {
             if (customerBOImpl.deleteCustomer(customerId, connection)) {
                 resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
                 LOGGER.info("Customer deleted successfully with ID: " + customerId);
@@ -128,6 +136,7 @@ public class CustomerController extends HttpServlet {
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "An error occurred while deleting the customer.");
             LOGGER.log(Level.SEVERE, "Database error during delete operation", e);
         }
+
     }
 
    @Override
