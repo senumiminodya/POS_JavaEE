@@ -10,3 +10,10 @@ CREATE TABLE item (
     price DECIMAL(10, 2) NOT NULL,
     qty INT NOT NULL
 );
+CREATE TABLE orders (
+    orderId INT PRIMARY KEY,
+    customerId VARCHAR(20),
+    total DECIMAL(10,2) NOT NULL,
+    date DATE NOT NULL,
+    FOREIGN KEY (customerId) REFERENCES customer(id)
+);
